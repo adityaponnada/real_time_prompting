@@ -200,8 +200,8 @@ def main():
     # --- Keep only specified columns and convert column names to lower case before saving ---
     keep_cols = [
         'Participant_ID', 'prompt_time_converted', 'Outcome', 'is_weekend', 'Time_of_Day',
-        'in_battery_saver_mode', 'Location_Category', 'screen_on', 'dist_from_home',
-        'is_phone_locked', 'wake_day_part', 'closeness_to_sleep_time', 'closeness_to_wake_time',
+        'in_battery_saver_mode', 'CHARGING_STATUS','Location_Category', 'screen_on', 'dist_from_home',
+        'is_phone_locked', 'last_phone_usage', 'wake_day_part', 'closeness_to_sleep_time', 'closeness_to_wake_time',
         'mims_5min', 'days_in_study', 'completion_24h', 'completion_since_wake', 'completion_since_start'
     ]
     df = df[keep_cols]
