@@ -5,7 +5,6 @@ This script processes a sampled compliance matrix CSV file and computes a set of
 ## Requirements
 - Python 3.7+
 - pandas
-- numpy
 
 Install requirements (if needed):
 ```bash
@@ -25,10 +24,17 @@ python compute_raw_features.py --input_csv <input_file.csv> --output_csv <output
 
 ```bash
 python compute_raw_features.py --input_csv sampled_compliance_matrix.csv --output_csv processed_compliance_matrix.csv
+## Main Notebooks of Interest
+
+The primary notebooks for analysis and modeling in this repository are:
+
+- `general_model_between_user_with_SMOTE.ipynb`: General model for between-user analysis with SMOTE.
+- `general_model_within_user_SMOTE.ipynb`: General model for within-user analysis with SMOTE.
+- `personalized_user_models_SMOTE.ipynb`: Personalized user models with SMOTE.
+
+Refer to these notebooks for the main workflows, modeling, and evaluation steps.
 ```
 
-## Output
-- The output CSV will contain only the following columns (all in lower case):
   - participant_id
   - prompt_time_converted
   - outcome
