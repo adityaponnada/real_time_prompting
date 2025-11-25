@@ -192,6 +192,37 @@ def main():
     # --- Calculate completion features ---
     df['completion_24h'] = calculate_completion_24h_optimized(df)
     print("Created column: completion_24h")
+
+    # --- Completion rate in past 1 hour (excluding current prompt) ---
+    def calculate_completion_1h(df):
+        """
+        For each observation, compute the completion rate among observations in the last 1 hour
+        window (excluding the current observation). Grouped by Participant_ID.
+        If there are 0 observations in the last 1 hour, completion_1h is 0.
+        Returns a numpy array of completion rates aligned with df.index.
+        """
+        df = df.copy()
+        df['prompt_time_converted'] = pd.to_datetime(df['prompt_time_converted'], errors='coerce')
+        df = df.sort_values(['Participant_ID', 'prompt_time_converted']).reset_index(drop=True)
+        completion_1h = np.zeros(len(df))
+        for pid, group in df.groupby('Participant_ID'):
+            times = group['prompt_time_converted'].values
+            outcomes = group['Outcome'].values
+            n = len(group)
+            for i in range(n):
+                window_start = times[i] - np.timedelta64(1, 'h')
+                idx_start = np.searchsorted(times, window_start, side='left')
+                idx_end = i  # exclude current prompt
+                if idx_start < idx_end:
+                    window_outcomes = outcomes[idx_start:idx_end]
+                    completion_1h[group.index[i]] = window_outcomes.sum() / len(window_outcomes)
+                else:
+                    completion_1h[group.index[i]] = 0
+        return completion_1h
+
+    df['completion_1h'] = calculate_completion_1h(df)
+    print("Created column: completion_1h")
+
     df['completion_since_wake'] = calculate_completion_since_wake_time(df)
     print("Created column: completion_since_wake")
     df['completion_since_start'] = calculate_completion_since_start(df)
@@ -202,7 +233,7 @@ def main():
         'Participant_ID', 'prompt_time_converted', 'Outcome', 'is_weekend', 'Time_of_Day',
         'in_battery_saver_mode', 'CHARGING_STATUS','Location_Category', 'screen_on', 'dist_from_home',
         'is_phone_locked', 'last_phone_usage', 'wake_day_part', 'closeness_to_sleep_time', 'closeness_to_wake_time',
-        'mims_5min', 'days_in_study', 'completion_24h', 'completion_since_wake', 'completion_since_start'
+    'mims_5min', 'days_in_study', 'completion_24h', 'completion_1h', 'completion_since_wake', 'completion_since_start'
     ]
     df = df[keep_cols]
     df.columns = [col.lower() for col in df.columns]
