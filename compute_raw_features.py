@@ -268,12 +268,47 @@ def main():
     df['time_between_prompts'] = calculate_time_between_prompts(df)
     print("Created column: time_between_prompts")
 
+    # --- Time since last answered (minutes) ---
+    def calculate_time_since_last_answered(df):
+        """
+        For each observation, compute minutes since the most recent previous observation with Outcome==1
+        for the same Participant_ID. If no previous answered observation exists, value is 0.
+        Returns a numpy array aligned with df.index.
+        """
+        df = df.copy()
+        df['prompt_time_converted'] = pd.to_datetime(df['prompt_time_converted'], errors='coerce')
+        df = df.sort_values(['Participant_ID', 'prompt_time_converted']).reset_index(drop=True)
+        time_since_last = np.zeros(len(df), dtype=float)
+        for pid, group in df.groupby('Participant_ID'):
+            times = group['prompt_time_converted'].values
+            outcomes = group['Outcome'].values
+            idxs = group.index.values
+            last_answered_time = None
+            for j in range(len(group)):
+                t = times[j]
+                if last_answered_time is None or pd.isna(t) or pd.isna(last_answered_time):
+                    time_since_last[idxs[j]] = 0.0
+                else:
+                    # compute minutes between t and last_answered_time
+                    try:
+                        diff_min = (t - last_answered_time) / np.timedelta64(1, 'm')
+                        time_since_last[idxs[j]] = float(diff_min) if np.isfinite(diff_min) else 0.0
+                    except Exception:
+                        time_since_last[idxs[j]] = 0.0
+                # update last_answered_time if this observation was answered
+                if outcomes[j] == 1:
+                    last_answered_time = t
+        return time_since_last
+
+    df['time_since_last_answered'] = calculate_time_since_last_answered(df)
+    print("Created column: time_since_last_answered")
+
     # --- Keep only specified columns and convert column names to lower case before saving ---
     keep_cols = [
         'Participant_ID', 'prompt_time_converted', 'Outcome', 'is_weekend', 'Time_of_Day',
         'in_battery_saver_mode', 'CHARGING_STATUS','Location_Category', 'screen_on', 'dist_from_home',
         'is_phone_locked', 'last_phone_usage', 'wake_day_part', 'closeness_to_sleep_time', 'closeness_to_wake_time',
-    'mims_5min', 'days_in_study', 'completion_24h', 'completion_1h', 'time_between_prompts', 'completion_since_wake', 'completion_since_start'
+    'mims_5min', 'days_in_study', 'completion_24h', 'completion_1h', 'time_between_prompts', 'time_since_last_answered', 'completion_since_wake', 'completion_since_start'
     ]
     df = df[keep_cols]
     df.columns = [col.lower() for col in df.columns]
