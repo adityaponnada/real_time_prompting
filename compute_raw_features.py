@@ -118,6 +118,75 @@ def main():
     df = df.groupby('Participant_ID').apply(calculate_days_in_study).reset_index(drop=True)
     print("Created column: days_in_study")
 
+    def convert_object_to_datetime_with_ms(date_str):
+        """
+        Converts a string like 'Mon Feb 22 16:53:05 PST 2021' to a datetime object with format '%Y-%m-%d %H:%M:%S.%f'.
+        Removes the timezone (any 3-letter word) and parses the rest. Returns NaT if parsing fails.
+        """
+        import re
+        import pandas as pd
+        if pd.isna(date_str):
+            return pd.NaT
+        # Remove the timezone (assumed to be a 3-letter word at position 20-22)
+        # Example: 'Mon Feb 22 16:53:05 PST 2021' -> 'Mon Feb 22 16:53:05 2021'
+        try:
+            s = str(date_str)
+            # Use regex to remove the timezone (3 letters surrounded by spaces)
+            s = re.sub(r' ([A-Z]{3}) ', ' ', s)
+            # Parse to datetime, add .%f for milliseconds (if present, else will be 0)
+            dt = pd.to_datetime(s, format='%a %b %d %H:%M:%S %Y', errors='coerce')
+            return dt
+        except Exception as e:
+            return pd.NaT
+
+    # Example usage:
+    # df['datetime_col'] = df['object_col'].apply(convert_object_to_datetime_with_ms)
+
+    ## Apply the function by creating a new column called prompt_time_converted
+    df['prompt_time_converted'] = df['Actual_Prompt_Local_Time'].apply(convert_object_to_datetime_with_ms)
+    print("Created column: prompt_time_converted")
+    # Show the first few rows of the processed compliance matrix with the new prompt_time_converted column
+    # print("First few rows of the processed compliance matrix with prompt_time_converted column:")
+    # print(processed_compliance_matrix[['Actual_Prompt_Local_Time', 'prompt_time_converted']].head(10))
+
+    ## A generic code to convert %Y-%m-%d %H:%M:%S XYZ format to datetime object
+## First ignore the last 3 letters for the timezone, then convert to %Y-%m-%d %H:%M:%S format datetime object.
+
+    def convert_datetime_remove_tz(date_str):
+        """
+        Converts a string like '2025-06-08 14:23:45 PST' to a datetime object with format '%Y-%m-%d %H:%M:%S'.
+        Removes the last 3-letter timezone and parses the rest. Returns NaT if parsing fails.
+        """
+        import pandas as pd
+        if pd.isna(date_str):
+            return pd.NaT
+        try:
+            # Remove the last 4 characters (space + 3-letter timezone)
+            s = str(date_str)[:-4]
+            dt = pd.to_datetime(s, format='%Y-%m-%d %H:%M:%S', errors='coerce')
+            return dt
+        except Exception as e:
+            return pd.NaT
+
+# Example usage:
+# df['datetime_col'] = df['object_col'].apply(convert_datetime_remove_tz)
+
+# Use this function to convert the WAKE_TIME column
+    df['WAKE_TIME_converted'] = df['WAKE_TIME'].apply(convert_datetime_remove_tz)
+    print("Created column: WAKE_TIME_converted")
+    # Show the first few rows of the processed compliance matrix with the new WAKE_TIME_converted column
+    # print("First few rows of the processed compliance matrix with WAKE_TIME_converted column:")
+    # print(processed_compliance_matrix[['WAKE_TIME', 'WAKE_TIME_converted']].head(10))
+        
+    # # --- Add prompt_time_converted and WAKE_TIME_converted columns if not present ---
+    # print("Adding prompt_time_converted and WAKE_TIME_converted columns...")
+    # df['prompt_time_converted'] = pd.to_datetime(df['Actual_Prompt_Local_Time'], errors='coerce')
+    # if 'WAKE_TIME' in df.columns:
+    #     df['WAKE_TIME_converted'] = pd.to_datetime(df['WAKE_TIME'], errors='coerce')
+    # else:
+    #     df['WAKE_TIME_converted'] = pd.NaT
+    print("Created columns: prompt_time_converted, WAKE_TIME_converted")
+
     # --- Completion rate in past 24h (excluding current prompt) ---
     def calculate_completion_24h_optimized(df):
         df = df.copy()
@@ -181,13 +250,7 @@ def main():
                     completion_since_start[idxs[i]] = outcomes[mask].sum() / n_obs
         return completion_since_start
 
-    # --- Add prompt_time_converted and WAKE_TIME_converted columns if not present ---
-    df['prompt_time_converted'] = pd.to_datetime(df['Actual_Prompt_Local_Time'], errors='coerce')
-    if 'WAKE_TIME' in df.columns:
-        df['WAKE_TIME_converted'] = pd.to_datetime(df['WAKE_TIME'], errors='coerce')
-    else:
-        df['WAKE_TIME_converted'] = pd.NaT
-    print("Created columns: prompt_time_converted, WAKE_TIME_converted")
+
 
     # --- Calculate completion features ---
     df['completion_24h'] = calculate_completion_24h_optimized(df)
@@ -302,6 +365,7 @@ def main():
 
     df['time_since_last_answered'] = calculate_time_since_last_answered(df)
     print("Created column: time_since_last_answered")
+
 
     # --- Keep only specified columns and convert column names to lower case before saving ---
     keep_cols = [
