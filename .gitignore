@@ -1,0 +1,2 @@
+# Ignore the virtual environment created for TensorFlow experiments
+tfpy/
