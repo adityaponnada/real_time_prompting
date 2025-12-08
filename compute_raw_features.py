@@ -367,6 +367,10 @@ def main():
     print("Created column: time_since_last_answered")
 
 
+    ## --- Sort the DataFrame by Participant_ID and prompt_time_converted from earliest to last ---
+    df = df.sort_values(['Participant_ID', 'prompt_time_converted']).reset_index(drop=True)
+    print("Sorted DataFrame by Participant_ID and prompt_time_converted")
+
     # --- Keep only specified columns and convert column names to lower case before saving ---
     keep_cols = [
         'Participant_ID', 'prompt_time_converted', 'Outcome', 'is_weekend', 'Time_of_Day',
