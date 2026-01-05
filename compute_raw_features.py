@@ -95,9 +95,7 @@ def main():
     print("Created column: last_phone_usage")
 
     # --- Waking day parts ---
-    df['wake_day_part'] = df['PARTS_OF_WAKING_HOUR'].apply(
-        lambda x: abs(x) if x < 0 else (3.0 if x in [4.0, 5.0, 6.0] else x)
-    )
+    df['wake_day_part'] = df['PARTS_OF_WAKING_HOUR'].apply(lambda x: 3.0 if abs(x) > 3.0 else abs(x))
     print("Created column: wake_day_part")
 
     # --- Closeness to sleep/wake time ---
